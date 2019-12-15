@@ -15,7 +15,7 @@ namespace DSAnimStudio
     {
         public BoundingBox Bounds;
 
-        private struct FlverSubmeshRendererFaceSet
+        public struct FlverSubmeshRendererFaceSet
         {
             public int IndexCount;
             public IndexBuffer IndexBuffer;
@@ -25,11 +25,11 @@ namespace DSAnimStudio
             public bool IsMotionBlur;
         }
 
-        List<FlverSubmeshRendererFaceSet> MeshFacesets = new List<FlverSubmeshRendererFaceSet>();
+        public List<FlverSubmeshRendererFaceSet> MeshFacesets = new List<FlverSubmeshRendererFaceSet>();
 
         private bool HasNoLODs = true;
 
-        VertexBuffer VertBuffer;
+        public VertexBuffer VertBuffer;
         //VertexBufferBinding VertBufferBinding;
 
         public string TexNameDiffuse { get; private set; } = null;
@@ -663,7 +663,7 @@ namespace DSAnimStudio
                                 GFX.Device,
                                 is32bit ? IndexElementSize.ThirtyTwoBits : IndexElementSize.SixteenBits,
                                 faceset.Indices.Count,
-                                BufferUsage.WriteOnly),
+                                BufferUsage.None),
                     IndexCount = faceset.Indices.Count,
                 };
 
@@ -700,7 +700,7 @@ namespace DSAnimStudio
             Bounds = BoundingBox.CreateFromPoints(MeshVertices.Select(x => x.Position));
 
             VertBuffer = new VertexBuffer(GFX.Device,
-                typeof(FlverShaderVertInput), MeshVertices.Length, BufferUsage.WriteOnly);
+                typeof(FlverShaderVertInput), MeshVertices.Length, BufferUsage.None);
             VertBuffer.SetData(MeshVertices);
 
             //VertBufferBinding = new VertexBufferBinding(VertBuffer, 0, 0);

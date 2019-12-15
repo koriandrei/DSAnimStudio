@@ -994,6 +994,8 @@ namespace DSAnimStudio.TaeEditor
                     LoadTAETemplate(selectedTemplate);
             });
             MenuBar.AddSeparator("File");
+            MenuBar.AddItem("File", "Export", () => File_Export());
+            MenuBar.AddSeparator("File");
             MenuBar.AddItem("File", "Recent Files");
             CreateRecentFilesList();
             MenuBar.AddSeparator("File");
@@ -2005,6 +2007,11 @@ namespace DSAnimStudio.TaeEditor
 
                
             }
+        }
+
+        public void File_Export()
+        {
+            ModelExporter.Export();
         }
 
         private string BrowseForXMLTemplateLoop()

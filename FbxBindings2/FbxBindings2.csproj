@@ -1,0 +1,157 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{D8F14135-8306-4DC7-B079-F22413FFA4DA}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>FbxBindings2</RootNamespace>
+    <AssemblyName>FbxBindings2</AssemblyName>
+    <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <Deterministic>true</Deterministic>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="EFbxType.cs" />
+    <Compile Include="FbxAMatrix.cs" />
+    <Compile Include="FbxAnimCurve.cs" />
+    <Compile Include="FbxAnimCurveBase.cs" />
+    <Compile Include="FbxAnimCurveDef.cs" />
+    <Compile Include="FbxAnimCurveFilterUnroll.cs" />
+    <Compile Include="FbxAnimCurveNode.cs" />
+    <Compile Include="FbxAnimLayer.cs" />
+    <Compile Include="FbxAnimStack.cs" />
+    <Compile Include="FbxAxisSystem.cs" />
+    <Compile Include="FbxBindingTable.cs" />
+    <Compile Include="FbxBindingTableBase.cs" />
+    <Compile Include="FbxBindingTableEntry.cs" />
+    <Compile Include="FbxBlendShape.cs" />
+    <Compile Include="FbxBlendShapeChannel.cs" />
+    <Compile Include="FbxCamera.cs" />
+    <Compile Include="FbxCluster.cs" />
+    <Compile Include="FbxCollection.cs" />
+    <Compile Include="FbxConnection.cs" />
+    <Compile Include="FbxConstraint.cs" />
+    <Compile Include="FbxConstraintAim.cs" />
+    <Compile Include="FbxConstraintParent.cs" />
+    <Compile Include="FbxConstraintPosition.cs" />
+    <Compile Include="FbxConstraintRotation.cs" />
+    <Compile Include="FbxConstraintScale.cs" />
+    <Compile Include="FbxDataType.cs" />
+    <Compile Include="FbxDeformer.cs" />
+    <Compile Include="FbxDocument.cs" />
+    <Compile Include="FbxDocumentInfo.cs" />
+    <Compile Include="FbxDouble4x4.cs" />
+    <Compile Include="FbxDoubleTemplates.cs" />
+    <Compile Include="FbxEmitter.cs" />
+    <Compile Include="FbxEntryView.cs" />
+    <Compile Include="FbxEuler.cs" />
+    <Compile Include="FbxExporter.cs" />
+    <Compile Include="FbxFileTexture.cs" />
+    <Compile Include="FbxGeometry.cs" />
+    <Compile Include="FbxGeometryBase.cs" />
+    <Compile Include="FbxGlobalSettings.cs" />
+    <Compile Include="FbxImplementation.cs" />
+    <Compile Include="FbxImporter.cs" />
+    <Compile Include="FbxIOBase.cs" />
+    <Compile Include="FbxIOFileHeaderInfo.cs" />
+    <Compile Include="FbxIOPluginRegistry.cs" />
+    <Compile Include="FbxIOSettings.cs" />
+    <Compile Include="FbxLayer.cs" />
+    <Compile Include="FbxLayerContainer.cs" />
+    <Compile Include="FbxLayerElement.cs" />
+    <Compile Include="FbxLayerElementArray.cs" />
+    <Compile Include="FbxLayerElementArrayTemplateFbxColor.cs" />
+    <Compile Include="FbxLayerElementArrayTemplateFbxSurfaceMaterial.cs" />
+    <Compile Include="FbxLayerElementArrayTemplateFbxVector2.cs" />
+    <Compile Include="FbxLayerElementArrayTemplateFbxVector4.cs" />
+    <Compile Include="FbxLayerElementArrayTemplateInt.cs" />
+    <Compile Include="FbxLayerElementBinormal.cs" />
+    <Compile Include="FbxLayerElementMaterial.cs" />
+    <Compile Include="FbxLayerElementNormal.cs" />
+    <Compile Include="FbxLayerElementTangent.cs" />
+    <Compile Include="FbxLayerElementTemplateFbxColor.cs" />
+    <Compile Include="FbxLayerElementTemplateFbxSurfaceMaterial.cs" />
+    <Compile Include="FbxLayerElementTemplateFbxVector2.cs" />
+    <Compile Include="FbxLayerElementTemplateFbxVector4.cs" />
+    <Compile Include="FbxLayerElementUV.cs" />
+    <Compile Include="FbxLayerElementVertexColor.cs" />
+    <Compile Include="FbxLight.cs" />
+    <Compile Include="FbxManager.cs" />
+    <Compile Include="FbxMarker.cs" />
+    <Compile Include="FbxMatrix.cs" />
+    <Compile Include="FbxMesh.cs" />
+    <Compile Include="FbxNode.cs" />
+    <Compile Include="FbxNodeAttribute.cs" />
+    <Compile Include="FbxNull.cs" />
+    <Compile Include="FbxObject.cs" />
+    <Compile Include="FbxPose.cs" />
+    <Compile Include="FbxProperty.cs" />
+    <Compile Include="FbxPropertyBool.cs" />
+    <Compile Include="FbxPropertyDouble.cs" />
+    <Compile Include="FbxPropertyDouble3.cs" />
+    <Compile Include="FbxPropertyEAreaLightShape.cs" />
+    <Compile Include="FbxPropertyEBlendMode.cs" />
+    <Compile Include="FbxPropertyEDecayType.cs" />
+    <Compile Include="FbxPropertyEGateFit.cs" />
+    <Compile Include="FbxPropertyEInheritType.cs" />
+    <Compile Include="FbxPropertyELightType.cs" />
+    <Compile Include="FbxPropertyEntryView.cs" />
+    <Compile Include="FbxPropertyEProjectionType.cs" />
+    <Compile Include="FbxPropertyEWrapMode.cs" />
+    <Compile Include="FbxPropertyFlags.cs" />
+    <Compile Include="FbxPropertyFloat.cs" />
+    <Compile Include="FbxPropertyInt.cs" />
+    <Compile Include="FbxPropertyMarkerELook.cs" />
+    <Compile Include="FbxPropertyNullELook.cs" />
+    <Compile Include="FbxPropertyString.cs" />
+    <Compile Include="FbxQuaternion.cs" />
+    <Compile Include="FbxScene.cs" />
+    <Compile Include="FbxSemanticEntryView.cs" />
+    <Compile Include="FbxShape.cs" />
+    <Compile Include="FbxSharpProgressCallback.cs" />
+    <Compile Include="FbxSkeleton.cs" />
+    <Compile Include="FbxSkin.cs" />
+    <Compile Include="FbxStatus.cs" />
+    <Compile Include="FbxSubDeformer.cs" />
+    <Compile Include="FbxSurfaceLambert.cs" />
+    <Compile Include="FbxSurfaceMaterial.cs" />
+    <Compile Include="FbxSurfacePhong.cs" />
+    <Compile Include="FbxSystemUnit.cs" />
+    <Compile Include="FbxTexture.cs" />
+    <Compile Include="FbxTime.cs" />
+    <Compile Include="FbxTimeSpan.cs" />
+    <Compile Include="FbxTransform.cs" />
+    <Compile Include="Globals.cs" />
+    <Compile Include="GlobalsPINVOKE.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+</Project>

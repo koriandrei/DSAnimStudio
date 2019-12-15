@@ -78,6 +78,7 @@
     <Compile Include="DebugPrimitives\DbgPrimSolidArrow.cs" />
     <Compile Include="DebugPrimitives\DbgPrimWireArrow.cs" />
     <Compile Include="FlverShadingMode.cs" />
+    <Compile Include="ModelExporter.cs" />
     <Compile Include="NewBlendableTransform.cs" />
     <Compile Include="NewChrAsmCfgJson.cs" />
     <Compile Include="NewChrAsmEquipForm.cs">
@@ -526,6 +527,10 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\FbxBindings2\FbxBindings2.csproj">
+      <Project>{d8f14135-8306-4dc7-b079-f22413ffa4da}</Project>
+      <Name>FbxBindings2</Name>
+    </ProjectReference>
     <ProjectReference Include="..\SoulsFormats\SoulsFormats\SoulsFormats.csproj">
       <Project>{22c664bd-877b-44df-8ecf-2808522469a8}</Project>
       <Name>SoulsFormats</Name>
