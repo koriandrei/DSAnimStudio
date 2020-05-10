@@ -10,7 +10,9 @@ namespace DSAnimStudio
 {
     public abstract class ParamData
     {
+        [ParamEntryIgnore()]
         public long ID;
+        [ParamEntryIgnore()]
         public string Name;
 
         public string GetDisplayName()
@@ -18,7 +20,55 @@ namespace DSAnimStudio
             return $"{ID}{(!string.IsNullOrWhiteSpace(Name) ? $": {Name}" : "")}";
         }
 
-        public abstract void Read(BinaryReaderEx br);
+        public abstract string ParamdefXmlName { get; }
+
+        public virtual void Read(PARAM.Row row)
+        {
+            foreach (var field in GetType().GetFields())
+            {
+                if (field.IsStatic)
+                {
+                    continue;
+                }
+
+                if (Attribute.IsDefined(field, typeof(ParamEntryIgnoreAttribute)))
+                {
+                    continue;
+                }
+
+                string entryName = field.Name;
+
+                if (Attribute.IsDefined(field, typeof(ParamEntryCustomNameAttribute)))
+                {
+                    entryName = ((ParamEntryCustomNameAttribute)Attribute.GetCustomAttribute(field, typeof(ParamEntryCustomNameAttribute))).EntryName;
+                }
+
+                if (field.FieldType == typeof(bool))
+                {
+                    field.SetValue(this, (byte)row[entryName].Value != 0);
+                }
+                else
+                {
+                    field.SetValue(this, row[entryName].Value);
+                }
+            }
+        }
+
+        [AttributeUsage(AttributeTargets.Field)]
+        public class ParamEntryCustomNameAttribute : Attribute
+        {
+            public ParamEntryCustomNameAttribute(string entryName)
+            {
+                EntryName = entryName;
+            }
+
+            public string EntryName { get; }
+        }
+
+        [AttributeUsage(AttributeTargets.Field)]
+        public class ParamEntryIgnoreAttribute : Attribute
+        {
+        }
 
         public class AtkParam : ParamData
         {
@@ -125,6 +175,24 @@ namespace DSAnimStudio
                 }
 
                 public bool IsCapsule => DmyPoly1 >= 0 && DmyPoly2 >= 0 && DmyPoly1 != DmyPoly2;
+
+                public static Hit Read(PARAM.Row row, int hitIndex)
+                {
+                    string hitEntryFormat = $"Hit{hitIndex}_";
+
+                    T GetRowValue<T>(string entryName)
+                    {
+                        return (T)row[hitEntryFormat + entryName].Value;
+                    }
+
+                    Hit hit = new Hit();
+                    hit.Radius = GetRowValue<float>("Radius");
+                    hit.DmyPoly1 = GetRowValue<short>("DmyPoly1");
+                    hit.DmyPoly2 = GetRowValue<short>("DmyPoly2");
+                    hit.HitType = (HitTypes)GetRowValue<byte>("hitType");
+
+                    return hit;
+                }
             }
 
             public Hit[] Hits;
@@ -157,13 +225,15 @@ namespace DSAnimStudio
             public short AtkDarkCorrection;
             public short AtkDark;
 
+            public override string ParamdefXmlName => new[] { GameDataManager.GameTypes.DS1, GameDataManager.GameTypes.BB, GameDataManager.GameTypes.DS1R }.Contains(GameDataManager.GameType) ? "AtkParam.xml" : "ATK_PARAM_ST.xml";
+
             public Color GetCapsuleColor(Hit hit)
             {
                 if (ThrowTypeID > 0)
                 {
                     return Color.Cyan;
                 }
-                else if ((AtkPhys > 0 || AtkMag > 0 || AtkFire > 0 || AtkThun > 0 || AtkDark > 0) || 
+                else if ((AtkPhys > 0 || AtkMag > 0 || AtkFire > 0 || AtkThun > 0 || AtkDark > 0) ||
                     (AtkPhysCorrection > 0 || AtkMagCorrection > 0 || AtkFireCorrection > 0 || AtkThunCorrection > 0 || AtkDarkCorrection > 0))
                 {
                     switch (hit.HitType)
@@ -180,222 +250,52 @@ namespace DSAnimStudio
                 }
             }
 
-            public override void Read(BinaryReaderEx br)
+            public override void Read(PARAM.Row row)
             {
-                var start = br.Position;
+                System.Text.RegularExpressions.Regex regex = new System.Text.RegularExpressions.Regex(@"Hit\d+_Radius");
 
-                if (GameDataManager.GameType == GameDataManager.GameTypes.DS3 ||
-                    GameDataManager.GameType == GameDataManager.GameTypes.SDT)
-                {
-                    Hits = new Hit[16];
-                }
-                else
-                {
-                    Hits = new Hit[4];
-                }
+                int hitsCount = row.Cells.Where(cell => regex.IsMatch(cell.Def.InternalName)).Count();
 
-                for (int i = 0; i < Hits.Length; i++)
+                Hits = new Hit[hitsCount];
+
+                for (int hitIndex = 0; hitIndex < hitsCount; ++hitIndex)
                 {
-                    Hits[i].DmyPoly1 = -1;
-                    Hits[i].DmyPoly2 = -1;
+                    Hits[hitIndex] = Hit.Read(row, hitIndex);
                 }
 
 
 
-                for (int i = 0; i <= 3; i++)
+
+                BlowingCorrection = (short)row["Blowing Correction"].Value;
+                AtkPhysCorrection = (short)row["AtkPhysCorrection"].Value;
+                AtkMagCorrection = (short)row["AtkMagCorrection"].Value;
+                AtkFireCorrection = (short)row["AtkFireCorrection"].Value;
+                AtkThunCorrection = (short)row["AtkThunCorrection"].Value;
+                AtkStamCorrection = (short)row["AtkStamCorrection"].Value;
+                GuardAtkRateCorrection = (short)row["GuardAtkRateCorrection"].Value;
+                GuardBreakCorrection = (short)row["GuardBreakCorrection"].Value;
+                AtkThrowEscapeCorrection = (short)row["AtkThrowEscapeCorrection"].Value;
+                AtkSuperArmorCorrection = (short)row["AtkSuperArmorCorrection"].Value;
+                AtkPhys = (short)row["AtkPhys"].Value;
+                AtkMag = (short)row["AtkMag"].Value;
+                AtkFire = (short)row["AtkFire"].Value;
+                AtkThun = (short)row["AtkThun"].Value;
+                AtkStam = (short)row["AtkStam"].Value;
+                GuardAtkRate = (short)row["GuardAtkRate"].Value;
+                GuardBreakRate = (short)row["GuardBreakRate"].Value;
+                AtkSuperArmor = (short)row["AtkSuperArmor"].Value;
+                AtkThrowEscape = (short)row["AtkThrowEscape"].Value;
+                AtkObj = (short)row["AtkObj"].Value;
+                GuardStaminaCutRate = (short)row["GuardStaminaCutRate"].Value;
+                GuardRate = (short)row["GuardRate"].Value;
+                ThrowTypeID = (short)row["ThrowTypeID"].Value;
+
+
+                // DS3 Only
+                if (GameDataManager.GameType == GameDataManager.GameTypes.DS3)
                 {
-                    Hits[i].Radius = br.ReadSingle();
-                }
-
-                //f32 knockbackDist
-                //f32 hitStopTime
-
-                //[SDT]
-                //f32 Unk01
-                //f32 Unk02
-                if (GameDataManager.GameType == GameDataManager.GameTypes.SDT)
-                    br.Position += (4 * 2);
-
-                //s32 spEffectId0
-                //s32 spEffectId1
-                //s32 spEffectId2
-                //s32 spEffectId3
-                //s32 spEffectId4
-                br.Position += (4 * 7);
-
-
-                for (int i = 0; i <= 3; i++)
-                {
-                    Hits[i].DmyPoly1 = br.ReadInt16();
-                }
-
-                for (int i = 0; i <= 3; i++)
-                {
-                    Hits[i].DmyPoly2 = br.ReadInt16();
-                }
-
-                BlowingCorrection = br.ReadInt16();
-                AtkPhysCorrection = br.ReadInt16();
-                AtkMagCorrection = br.ReadInt16();
-                AtkFireCorrection = br.ReadInt16();
-                AtkThunCorrection = br.ReadInt16();
-                AtkStamCorrection = br.ReadInt16();
-                GuardAtkRateCorrection = br.ReadInt16();
-                GuardBreakCorrection = br.ReadInt16();
-                AtkThrowEscapeCorrection = br.ReadInt16();
-                AtkSuperArmorCorrection = br.ReadInt16();
-                AtkPhys = br.ReadInt16();
-                AtkMag = br.ReadInt16();
-                AtkFire = br.ReadInt16();
-                AtkThun = br.ReadInt16();
-                AtkStam = br.ReadInt16();
-                GuardAtkRate = br.ReadInt16();
-                GuardBreakRate = br.ReadInt16();
-                AtkSuperArmor = br.ReadInt16();
-                AtkThrowEscape = br.ReadInt16();
-                AtkObj = br.ReadInt16();
-                GuardStaminaCutRate = br.ReadInt16();
-                GuardRate = br.ReadInt16();
-
-
-                br.Position = start + 0x68;
-
-                if (GameDataManager.GameType == GameDataManager.GameTypes.SDT)
-                    br.Position += (4 * 2);
-
-                ThrowTypeID = br.ReadInt16();
-
-                
-
-                for (int i = 0; i <= 3; i++)
-                {
-                    Hits[i].HitType = br.ReadEnum8<HitTypes>();
-                }
-
-                //TODO: Read DS3 hit 4-15
-                if (GameDataManager.GameType == GameDataManager.GameTypes.DS3 ||
-                    GameDataManager.GameType == GameDataManager.GameTypes.SDT)
-                {
-                    //u8 Hit0_hitType
-                    //u8 Hit1_hitType
-                    //u8 Hit2_hitType
-                    //u8 Hit3_hitType
-                    //u8 hit0_Priority
-                    //u8 hit1_Priority
-                    //u8 hit2_Priority
-                    //u8 hit3_Priority
-                    //u8 damageLevel
-                    //u8 mapHitType
-                    //u8 GuardCutCancelRate
-                    //s8 AtkAttribute
-                    //s8 spAttribute
-                    //s8 atkType
-                    //s8 atkMaterial
-                    //s8 atkSize
-                    //s8 DefMaterial
-                    //s8 DefSfxMaterial
-                    //u8 HitSourceType
-                    //u8 ThrowFlag
-                    //b8 disableGuard
-                    //b8 disableStaminaAttack
-                    //b8 disableHitSpEffect
-                    //b8 IgnoreNotifyMissSwingForAI
-                    //b8 repeatHitSfx
-                    //b8 IsArrowAtk
-                    //b8 IsGhostAtk
-                    //b8 isDisableNoDamage
-                    //u8 atkPowForSfxSe
-                    //u8 atkDirForSfxSe
-                    //b8 opposeTarget
-                    //b8 friendlyTarget
-                    //b8 selfTarget
-                    //b8 isChargeAtk
-                    //b8 isShareHitList
-                    //b8 isCheckObjPenetration
-                    //b8 0x81
-                    //b8 0x81
-                    //u8 pad1
-                    //u8 regainableSlotId
-                    //s32 deathCauseId
-                    //s32 decalId1
-                    //s32 decalId2
-                    //s32 spawnAiSoundId
-                    //s32 HitAiSoundId
-                    //s32 RumbleId0
-                    //s32 RumbleId1
-                    //s32 RumbleId2
-                    //s32 RumbleId3
-                    //s32 Hit0_VfxId
-                    //s32 Hit0_DummyPolyId0
-                    //s32 Hit0_DummyPolyId1
-                    //s32 Hit1_VfxId1
-                    //s32 Hit1_DummyPolyId0
-                    //s32 Hit1_DummyPolyId1
-                    //s32 Hit2_VfxId
-                    //s32 Hit2_DummyPolyId0
-                    //s32 Hit2_DummyPolyId1
-                    //s32 Hit3_VfxId
-                    //s32 Hit3_DummyPolyId0
-                    //s32 Hit3_DummyPolyId1
-                    //s32 Hit4_VfxId
-                    //s32 Hit4_DummyPolyId0
-                    //s32 Hit4_DummyPolyId1
-                    //s32 Hit5_VfxId
-                    //s32 Hit5_DummyPolyId0
-                    //s32 Hit5_DummyPolyId1
-                    //s32 Hit6_VfxId
-                    //s32 Hit6_DummyPolyId0
-                    //s32 Hit6_DummyPolyId1
-                    //s32 Hit7_VfxId
-                    //s32 Hit7_DummyPolyId0
-                    //s32 Hit7_DummyPolyId1
-                    br.Position += ((1 * 22) + (4 * 33));
-                    for (int i = 4; i <= 15; i++)
-                    {
-                        Hits[i].Radius = br.ReadSingle();
-                    }
-
-                    for (int i = 4; i <= 15; i++)
-                    {
-                        Hits[i].DmyPoly1 = br.ReadInt16();
-                    }
-
-                    for (int i = 4; i <= 15; i++)
-                    {
-                        Hits[i].DmyPoly2 = br.ReadInt16();
-                    }
-
-                    for (int i = 4; i <= 15; i++)
-                    {
-                        Hits[i].HitType = br.ReadEnum8<HitTypes>();
-                    }
-
-                    //u8 Hit4_hitType
-                    //u8 Hit5_hitType
-                    //u8 Hit6_hitType
-                    //u8 Hit7_hitType
-                    //u8 Hit8_hitType
-                    //u8 Hit9_hitType
-                    //u8 Hit10_hitType
-                    //u8 Hit11_hitType
-                    //u8 Hit12_hitType
-                    //u8 Hit13_hitType
-                    //u8 Hit14_hitType
-                    //u8 Hit15_hitType
-                    //br.Position += (1 * 12);
-
-                    //s32 0x174
-                    //s32 0x178
-                    //s32 0x17C
-                    br.Position += (4 * 3);
-
-                    //s16 defMaterialVal0
-                    //s16 defMaterialVal1
-                    //s16 defMaterialVal2
-                    br.Position += (2 * 3);
-
-                    AtkDarkCorrection = br.ReadInt16();
-                    AtkDark = br.ReadInt16();
+                    AtkDarkCorrection = (short)row["atkDarkCorrection"].Value;
+                    AtkDark = (short)row["atkDark"].Value;
                 }
 
                 SuggestedDummyPolySource = DummyPolySource.None;
@@ -416,10 +316,10 @@ namespace DSAnimStudio
 
                 if (SuggestedDummyPolySource == DummyPolySource.None)
                 {
-                    br.Position = start + 0x7C;
-                    byte hitSourceType = br.ReadByte();
-                    if (hitSourceType == 1)
+                    if ((byte)row["HitSourceType"].Value == 1)
+                    {
                         SuggestedDummyPolySource = DummyPolySource.Body;
+                    }
                 }
             }
         }
@@ -446,19 +346,20 @@ namespace DSAnimStudio
             public byte Category;
             public byte HeroPoint;
 
-            public override void Read(BinaryReaderEx br)
+            public override string ParamdefXmlName => "BEHAVIOR_PARAM_ST.xml";
+
+            public override void Read(PARAM.Row row)
             {
-                VariationID = br.ReadInt32();
-                BehaviorJudgeID = br.ReadInt32();
-                EzStateBehaviorType_Old = br.ReadByte();
-                RefType = br.ReadEnum8<RefTypes>();
-                br.Position += 2; //dummy8 pad0[2]
-                RefID = br.ReadInt32();
-                SFXVariationID = br.ReadInt32();
-                Stamina = br.ReadInt32();
-                MP = br.ReadInt32();
-                Category = br.ReadByte();
-                HeroPoint = br.ReadByte();
+                VariationID = (int)row["variationId"].Value;
+                BehaviorJudgeID = (int)row["behaviorJudgeId"].Value;
+                EzStateBehaviorType_Old = (byte)row["ezStateBehaviorType_old"].Value;
+                RefType = (RefTypes)(byte)row["refType"].Value;
+                RefID = (int)row["refId"].Value;
+                SFXVariationID = (int)row["sfxVariationId"].Value;
+                Stamina = (int)row["stamina"].Value; ;
+                MP = (int)row["mp"].Value;
+                Category = (byte)row["category"].Value;
+                HeroPoint = (byte)row["heroPoint"].Value;
             }
         }
 
@@ -468,7 +369,9 @@ namespace DSAnimStudio
 
             public bool[] DrawMask;
 
-            public string GetMaskString(Dictionary<int, string> materialsPerMask, 
+            public override string ParamdefXmlName => "NPC_PARAM_ST.xml";
+
+            public string GetMaskString(Dictionary<int, string> materialsPerMask,
                 List<int> masksEnabledOnAllNpcParamsForThisChr)
             {
                 if (materialsPerMask.Any(kvp => kvp.Key >= 0))
@@ -512,7 +415,7 @@ namespace DSAnimStudio
                 {
                     return "";
                 }
-                
+
             }
 
             public void ApplyMaskToModel(Model mdl)
@@ -524,58 +427,22 @@ namespace DSAnimStudio
                 }
             }
 
-            public override void Read(BinaryReaderEx br)
+            private IEnumerable<bool> CreateDrawMask(PARAM.Row row, int entriesCount)
             {
-                var start = br.Position;
-                BehaviorVariationID = br.ReadInt32();
+                for (int modelDispMaskEntryIndex = 0; modelDispMaskEntryIndex < entriesCount; ++modelDispMaskEntryIndex)
+                {
+                    const string entryNameTemplate = "ModelDispMask";
+                    yield return (byte)row[entryNameTemplate + modelDispMaskEntryIndex].Value != 0;
+                }
+            }
 
-                if (GameDataManager.GameType == GameDataManager.GameTypes.DS3 ||
-                    GameDataManager.GameType == GameDataManager.GameTypes.BB ||
-                    GameDataManager.GameType == GameDataManager.GameTypes.SDT)
-                {
-                    DrawMask = new bool[32];
-                }
-                else
-                {
-                    DrawMask = new bool[16];
-                }
+            public override void Read(PARAM.Row row)
+            {
+                BehaviorVariationID = (int)row["behaviorVariationId"].Value;
 
-                if (GameDataManager.GameType == GameDataManager.GameTypes.SDT)
-                {
-                    br.Position = start + 0x14E;
-                }
-                else
-                {
-                    br.Position = start + 0x146;
-                }
+                bool isModelDisp32Bit = row.Cells.Any(cell => cell.Def.InternalName == "ModelDispMask16");
 
-                byte mask1 = br.ReadByte();
-                byte mask2 = br.ReadByte();
-                for (int i = 0; i < 8; i++)
-                    DrawMask[i] = ((mask1 & (1 << i)) != 0);
-                for (int i = 0; i < 8; i++)
-                    DrawMask[8 + i] = ((mask2 & (1 << i)) != 0);
-
-                if (GameDataManager.GameType == GameDataManager.GameTypes.DS3 || 
-                    GameDataManager.GameType == GameDataManager.GameTypes.BB ||
-                    GameDataManager.GameType == GameDataManager.GameTypes.SDT)
-                {
-                    if (GameDataManager.GameType == GameDataManager.GameTypes.SDT)
-                    {
-                        br.Position = start + 0x152;
-                    }
-                    else
-                    {
-                        br.Position = start + 0x14A;
-                    }
-                    
-                    byte mask3 = br.ReadByte();
-                    byte mask4 = br.ReadByte();
-                    for (int i = 0; i < 8; i++)
-                        DrawMask[16 + i] = ((mask3 & (1 << i)) != 0);
-                    for (int i = 0; i < 8; i++)
-                        DrawMask[24 + i] = ((mask4 & (1 << i)) != 0);
-                }
+                DrawMask = CreateDrawMask(row, isModelDisp32Bit ? 32 : 16).ToArray();
             }
         }
 
@@ -590,15 +457,22 @@ namespace DSAnimStudio
 
         public class EquipParamWeapon : ParamData
         {
+            [ParamEntryCustomName("behaviorVariationId")]
             public int BehaviorVariationID;
+            [ParamEntryCustomName("equipModelId")]
             public short EquipModelID;
+            [ParamEntryCustomName("wepmotionCategory")]
             public byte WepMotionCategory;
+            [ParamEntryCustomName("spAtkCategory")]
             public short SpAtkCategory;
+            [ParamEntryCustomName("wepAbsorpPosId")]
             public int WepAbsorpPosID = -1;
 
-            public bool IsPairedWeaponDS3 => GameDataManager.GameType == GameDataManager.GameTypes.DS3 
+            public bool IsPairedWeaponDS3 => GameDataManager.GameType == GameDataManager.GameTypes.DS3
                 && (DS3PairedSpAtkCategories.Contains(SpAtkCategory) || (WepMotionCategory == 42)) // DS3 Fist weapons
                 ;
+
+            public override string ParamdefXmlName => "EQUIP_PARAM_WEAPON_ST.xml";
 
             public string GetFullPartBndPath()
             {
@@ -633,43 +507,26 @@ namespace DSAnimStudio
                 250, //Giant Door Shield
                 253, //Ringed Knight Paired Greatswords
             };
-
-            public override void Read(BinaryReaderEx br)
-            {
-                long start = br.Position;
-                BehaviorVariationID = br.ReadInt32();
-
-                br.Position = start + 0xB8;
-                EquipModelID = br.ReadInt16();
-
-                br.Position = start + 0xE3;
-                WepMotionCategory = br.ReadByte();
-
-                br.Position = start + 0xEA;
-                if (GameDataManager.GameType == GameDataManager.GameTypes.DS3 ||
-                    GameDataManager.GameType == GameDataManager.GameTypes.SDT)
-                    SpAtkCategory = br.ReadInt16();
-                else
-                    SpAtkCategory = br.ReadByte();
-
-                if (GameDataManager.GameType == GameDataManager.GameTypes.DS3 || 
-                    GameDataManager.GameType == GameDataManager.GameTypes.SDT)
-                {
-                    br.Position = start + 0x170;
-                    WepAbsorpPosID = br.ReadInt32();
-                }
-            }
         }
-        
+
         public class EquipParamProtector : ParamData
         {
+            [ParamEntryCustomName("equipModelID")]
             public short EquipModelID;
+            [ParamEntryCustomName("equipModelGender")]
             public EquipModelGenders EquipModelGender;
+            [ParamEntryCustomName("headEquip")]
             public bool HeadEquip;
+            [ParamEntryCustomName("bodyEquip")]
             public bool BodyEquip;
+            [ParamEntryCustomName("armEquip")]
             public bool ArmEquip;
+            [ParamEntryCustomName("legEquip")]
             public bool LegEquip;
+            [ParamEntryIgnore]
             public List<bool> InvisibleFlags = new List<bool>();
+
+            public override string ParamdefXmlName => "EQUIP_PARAM_PROTECTOR_ST.xml";
 
             public void ApplyInvisFlagsToMask(ref bool[] mask)
             {
@@ -730,62 +587,25 @@ namespace DSAnimStudio
                 return null;
             }
 
-            public override void Read(BinaryReaderEx br)
+            public override void Read(PARAM.Row row)
             {
-                long start = br.Position;
+                base.Read(row);
 
-                br.Position = start + 0xA0;
-                EquipModelID = br.ReadInt16();
+                var regex = new System.Text.RegularExpressions.Regex(@"InvisibleFlag\d+");
 
-                br.Position = start + 0xD1;
-                EquipModelGender = br.ReadEnum8<EquipModelGenders>();
+                var invisibleFlagCells = row.Cells.Where(cell => regex.IsMatch(cell.Def.InternalName)).OrderBy(cell => cell.Def.InternalName).ToArray();
 
-                br.Position = start + 0xD8;
+                InvisibleFlags = new List<bool>();
 
-                if (GameDataManager.GameType == GameDataManager.GameTypes.DS1 ||
-                    GameDataManager.GameType == GameDataManager.GameTypes.DS1R ||
-                    GameDataManager.GameType == GameDataManager.GameTypes.BB)
+                foreach (var cell in invisibleFlagCells)
                 {
-                    var firstBitmask = ReadBitmask(br, 6 + 48);
-                    //IsDeposit = firstBitmask[0]
-                    HeadEquip = firstBitmask[1];
-                    BodyEquip = firstBitmask[2];
-                    ArmEquip = firstBitmask[3];
-                    LegEquip = firstBitmask[4];
-                    //UseFaceScale = firstBitmask[5];
-                    InvisibleFlags.Clear();
-                    for (int i = 0; i <= 47; i++)
-                    {
-                        InvisibleFlags.Add(firstBitmask[i + 6]);
-                    }
+                    bool isFlagSet = (byte)cell.Value != 1;
 
-                    if (GameDataManager.GameType == GameDataManager.GameTypes.BB)
-                    {
-                        br.Position = start + 0xFD;
-                        var mask48to62 = ReadBitmask(br, 15);
-
-                        InvisibleFlags.AddRange(mask48to62);
-                    }
-                }
-                else if (GameDataManager.GameType == GameDataManager.GameTypes.DS3 ||
-                    GameDataManager.GameType == GameDataManager.GameTypes.SDT)
-                {
-                    var firstBitmask = ReadBitmask(br, 5);
-                    //IsDeposit = firstBitmask[0]
-                    HeadEquip = firstBitmask[1];
-                    BodyEquip = firstBitmask[2];
-                    ArmEquip = firstBitmask[3];
-                    LegEquip = firstBitmask[4];
-
-                    br.Position = start + 0x12E;
-                    for (int i = 0; i < 96; i++)
-                    {
-                        InvisibleFlags.Add(br.ReadByte() == 1);
-                    }
+                    InvisibleFlags.Add(isFlagSet);
                 }
             }
         }
-        
+
         public class WepAbsorpPosParam : ParamData
         {
             public enum WepAbsorpPosType
@@ -818,42 +638,66 @@ namespace DSAnimStudio
 
             public Dictionary<WepAbsorpPosType, ushort> AbsorpPos = new Dictionary<WepAbsorpPosType, ushort>();
 
-            public override void Read(BinaryReaderEx br)
+            public override string ParamdefXmlName => "WEP_ABSORP_POS_PARAM_ST.xml";
+
+            private static Dictionary<WepAbsorpPosType, string> enumValueToEntryName;
+
+            static WepAbsorpPosParam()
             {
-                AbsorpPos = new Dictionary<WepAbsorpPosType, ushort>();
+                enumValueToEntryName = new Dictionary<WepAbsorpPosType, string>();
 
-                //u8 SheathTime;
-                //u8 pad[3]
+                enumValueToEntryName.Add(WepAbsorpPosType.OneHand0, "OneHandDamipolyId0");
+                enumValueToEntryName.Add(WepAbsorpPosType.OneHand1, "OneHandDamipolyId1");
+                enumValueToEntryName.Add(WepAbsorpPosType.OneHand2, "OneHandDamipolyId2");
+                enumValueToEntryName.Add(WepAbsorpPosType.OneHand3, "OneHandDamipolyId3");
+                enumValueToEntryName.Add(WepAbsorpPosType.OneHand4, "OneHandDamipolyId4");
+                enumValueToEntryName.Add(WepAbsorpPosType.OneHand5, "OneHandDamipolyId5");
+                enumValueToEntryName.Add(WepAbsorpPosType.OneHand6, "OneHandDamipolyId6");
+                enumValueToEntryName.Add(WepAbsorpPosType.OneHand7, "OneHandDamipolyId7");
+                enumValueToEntryName.Add(WepAbsorpPosType.BothHand0, "BothHandDamipolyId0");
+                enumValueToEntryName.Add(WepAbsorpPosType.BothHand1, "BothHandDamipolyId1");
+                enumValueToEntryName.Add(WepAbsorpPosType.BothHand2, "BothHandDamipolyId2");
+                enumValueToEntryName.Add(WepAbsorpPosType.BothHand3, "BothHandDamipolyId3");
+                enumValueToEntryName.Add(WepAbsorpPosType.BothHand4, "BothHandDamipolyId4");
+                enumValueToEntryName.Add(WepAbsorpPosType.BothHand5, "BothHandDamipolyId5");
+                enumValueToEntryName.Add(WepAbsorpPosType.BothHand6, "BothHandDamipolyId6");
+                enumValueToEntryName.Add(WepAbsorpPosType.BothHand7, "BothHandDamipolyId7");
+                enumValueToEntryName.Add(WepAbsorpPosType.Sheath0, "ShealthDamipolyId0");
+                enumValueToEntryName.Add(WepAbsorpPosType.Sheath1, "ShealthDamipolyId1");
+                enumValueToEntryName.Add(WepAbsorpPosType.Sheath2, "ShealthDamipolyId2");
+                enumValueToEntryName.Add(WepAbsorpPosType.Sheath3, "ShealthDamipolyId3");
+                enumValueToEntryName.Add(WepAbsorpPosType.Sheath4, "ShealthDamipolyId4");
+                enumValueToEntryName.Add(WepAbsorpPosType.Sheath5, "ShealthDamipolyId5");
+                enumValueToEntryName.Add(WepAbsorpPosType.Sheath6, "ShealthDamipolyId6");
+                enumValueToEntryName.Add(WepAbsorpPosType.Sheath7, "ShealthDamipolyId7");
+            }
 
-                br.Position += 4;
+            public override void Read(PARAM.Row row)
+            {
+                foreach (var kvp in enumValueToEntryName)
+                {
+                    var cell = row[kvp.Value];
 
-                AbsorpPos.Add(WepAbsorpPosType.OneHand0, br.ReadUInt16());
-                AbsorpPos.Add(WepAbsorpPosType.OneHand1, br.ReadUInt16());
-                AbsorpPos.Add(WepAbsorpPosType.BothHand0, br.ReadUInt16());
-                AbsorpPos.Add(WepAbsorpPosType.Sheath0, br.ReadUInt16());
-                AbsorpPos.Add(WepAbsorpPosType.Sheath1, br.ReadUInt16());
-                AbsorpPos.Add(WepAbsorpPosType.OneHand2, br.ReadUInt16());
-                AbsorpPos.Add(WepAbsorpPosType.OneHand3, br.ReadUInt16());
-                AbsorpPos.Add(WepAbsorpPosType.BothHand1, br.ReadUInt16());
-                AbsorpPos.Add(WepAbsorpPosType.Sheath2, br.ReadUInt16());
-                AbsorpPos.Add(WepAbsorpPosType.Sheath3, br.ReadUInt16());
-                AbsorpPos.Add(WepAbsorpPosType.OneHand4, br.ReadUInt16());
-                AbsorpPos.Add(WepAbsorpPosType.OneHand5, br.ReadUInt16());
-                AbsorpPos.Add(WepAbsorpPosType.BothHand2, br.ReadUInt16());
-                AbsorpPos.Add(WepAbsorpPosType.Sheath4, br.ReadUInt16());
-                AbsorpPos.Add(WepAbsorpPosType.Sheath5, br.ReadUInt16());
-                AbsorpPos.Add(WepAbsorpPosType.OneHand6, br.ReadUInt16());
-                AbsorpPos.Add(WepAbsorpPosType.OneHand7, br.ReadUInt16());
-                AbsorpPos.Add(WepAbsorpPosType.BothHand3, br.ReadUInt16());
-                AbsorpPos.Add(WepAbsorpPosType.Sheath6, br.ReadUInt16());
-                AbsorpPos.Add(WepAbsorpPosType.Sheath7, br.ReadUInt16());
+                    ushort value;
 
-                br.Position += 4;
+                    if (cell.Def.DisplayType == PARAMDEF.DefType.s16)
+                    {
+                        checked
+                        {
+                            value = (ushort)(short)cell.Value;
+                        }
+                    }
+                    else if (cell.Def.DisplayType == PARAMDEF.DefType.u16)
+                    {
+                        value = (ushort)cell.Value;
+                    }
+                    else
+                    {
+                        throw new NotImplementedException();
+                    }
 
-                AbsorpPos.Add(WepAbsorpPosType.BothHand4, br.ReadUInt16());
-                AbsorpPos.Add(WepAbsorpPosType.BothHand5, br.ReadUInt16());
-                AbsorpPos.Add(WepAbsorpPosType.BothHand6, br.ReadUInt16());
-                AbsorpPos.Add(WepAbsorpPosType.BothHand7, br.ReadUInt16());
+                    AbsorpPos[kvp.Key] = value;
+                }
             }
         }
 

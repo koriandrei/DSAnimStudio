@@ -16,6 +16,9 @@ namespace DSAnimStudio
         private static Dictionary<GameDataManager.GameTypes, Dictionary<string, PARAM>> LoadedParams 
             = new Dictionary<GameDataManager.GameTypes, Dictionary<string, PARAM>>();
 
+        private static Dictionary<GameDataManager.GameTypes, Dictionary<Type, PARAMDEF>> LoadedParamdefs
+            = new Dictionary<GameDataManager.GameTypes, Dictionary<Type, PARAMDEF>>();
+
         public static Dictionary<long, ParamData.BehaviorParam> BehaviorParam_PC 
             = new Dictionary<long, ParamData.BehaviorParam>();
 
@@ -67,6 +70,30 @@ namespace DSAnimStudio
                 }
             }
             throw new InvalidOperationException($"Param '{paramName}' not found :tremblecat:");
+        }
+
+        public static PARAMDEF GetParamdef<T>() where T: ParamData, new()
+        {
+            if (!LoadedParamdefs.ContainsKey(GameDataManager.GameType))
+                LoadedParamdefs.Add(GameDataManager.GameType, new Dictionary<Type, PARAMDEF>());
+
+
+            if (!LoadedParamdefs[GameDataManager.GameType].ContainsKey(typeof(T)))
+            {
+                string baseParamdexPath = @"G:\work\dks\tools\DSAnimStudio\Paramdex";
+
+                string gameName = "DS3";
+
+                string paramXmlName = new T().ParamdefXmlName;
+
+                string paramdefXmlPath = Path.Combine(baseParamdexPath, gameName, "Defs", paramXmlName);
+
+                PARAMDEF loadedParamdef = PARAMDEF.XmlDeserialize(paramdefXmlPath);
+
+                LoadedParamdefs[GameDataManager.GameType][typeof(T)] = loadedParamdef;
+            }
+
+            return LoadedParamdefs[GameDataManager.GameType][typeof(T)];
         }
 
         private static bool CheckNpcParamForCurrentGameType(int chrId, ParamData.NpcParam r, bool isFirst, bool matchCXXX0)
@@ -125,12 +152,18 @@ namespace DSAnimStudio
             {
                 paramDict.Clear();
                 var param = GetParam(paramName);
+
+                var paramdef = GetParamdef<T>();
+
+                param.ApplyParamdef(paramdef);
+
                 foreach (var row in param.Rows)
                 {
                     var rowData = new T();
                     rowData.ID = row.ID;
                     rowData.Name = row.Name;
-                    rowData.Read(param.GetRowReader(row));
+                    rowData.Read(row);
+                    //rowData.Read(param.GetRowReader(row));
                     if (!paramDict.ContainsKey(row.ID))
                         paramDict.Add(row.ID, rowData);
                 }

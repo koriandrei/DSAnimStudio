@@ -7,3 +7,6 @@
 [submodule "SFAnimExtensions"]
 	path = SFAnimExtensions
 	url = https://github.com/koriandrei/SFAnimExtensions.git
+[submodule "Paramdex"]
+	path = Paramdex
+	url = https://github.com/soulsmods/Paramdex.git
